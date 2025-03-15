@@ -55,7 +55,7 @@ jobs:
         name: Login to DockerHub
         uses: docker/login-action@v3
         with:
-          username: splitbrain
+          username: t0biii
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       -
         name: Login to GitHub Container Registry
@@ -73,21 +73,21 @@ jobs:
           
           # DockerHub Tags
           if [ "${{ matrix.release.type }}" == "master" ]; then
-            DOCKERHUB_TAGS="dokuwiki/dokuwiki:master"
+            DOCKERHUB_TAGS="t0biii/dokuwiki:master"
           else
-            DOCKERHUB_TAGS="dokuwiki/dokuwiki:${{ matrix.release.date }} dokuwiki/dokuwiki:${{ matrix.release.type }}"
+            DOCKERHUB_TAGS="t0biii/dokuwiki:${{ matrix.release.date }} t0biii/dokuwiki:${{ matrix.release.type }}"
             if [ "${{ matrix.release.type }}" == "stable" ]; then
-              DOCKERHUB_TAGS="$DOCKERHUB_TAGS dokuwiki/dokuwiki:latest"
+              DOCKERHUB_TAGS="$DOCKERHUB_TAGS t0biii/dokuwiki:latest"
             fi
           fi
           
           # GHCR Tags
           if [ "${{ matrix.release.type }}" == "master" ]; then
-            GHCR_TAGS="ghcr.io/${{ github.repository }}:master"
+            GHCR_TAGS="ghcr.io/${{ github.repository }}/dokuwiki:master"
           else
-            GHCR_TAGS="ghcr.io/${{ github.repository }}:${{ matrix.release.date }} ghcr.io/${{ github.repository }}:${{ matrix.release.type }}"
+            GHCR_TAGS="ghcr.io/${{ github.repository }}/dokuwiki:${{ matrix.release.date }} ghcr.io/${{ github.repository }}/dokuwiki:${{ matrix.release.type }}"
             if [ "${{ matrix.release.type }}" == "stable" ]; then
-              GHCR_TAGS="$GHCR_TAGS ghcr.io/${{ github.repository }}:latest"
+              GHCR_TAGS="$GHCR_TAGS ghcr.io/${{ github.repository }}/dokuwiki:latest"
             fi
           fi
           
