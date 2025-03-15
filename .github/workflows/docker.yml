@@ -64,14 +64,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - 
-        name: Retrieve author data
-        id: author
-        run: |
-          AUTHOR=$(curl -sSL ${{ github.event.repository.owner.url }} | jq -r '.name')
-          echo "AUTHOR=$AUTHOR" >> $GITHUB_ENV
-          
       -
         name: Prepare Docker Tags
         id: docker_tags
@@ -81,23 +73,23 @@ jobs:
           
           # DockerHub Tags
           if [[ "${{ matrix.release.type }}" == "master" ]]; then
-            TAGS+=("${{ env.AUTHOR }}/dokuwiki:master")
+            TAGS+=("t0biii/dokuwiki:master")
           else
-            TAGS+=("${{ env.AUTHOR }}/dokuwiki:${{ matrix.release.date }}")
-            TAGS+=("${{ env.AUTHOR }}/dokuwiki:${{ matrix.release.type }}")
+            TAGS+=("t0biii/dokuwiki:${{ matrix.release.date }}")
+            TAGS+=("t0biii/dokuwiki:${{ matrix.release.type }}")
             if [[ "${{ matrix.release.type }}" == "stable" ]]; then
-              TAGS+=("${{ env.AUTHOR }}/dokuwiki:latest")
+              TAGS+=("t0biii/dokuwiki:latest")
             fi
           fi
           
           # GitHub Packages Tags
           if [[ "${{ matrix.release.type }}" == "master" ]]; then
-            TAGS+=("ghcr.io/${{ env.AUTHOR }}:master")
+            TAGS+=("ghcr.io/t0biii/dokuwiki:master")
           else
-            TAGS+=("ghcr.io/${{ env.AUTHOR }}:${{ matrix.release.date }}")
-            TAGS+=("ghcr.io/${{ env.AUTHOR }}:${{ matrix.release.type }}")
+            TAGS+=("ghcr.io/t0biii/dokuwiki:${{ matrix.release.date }}")
+            TAGS+=("ghcr.io/t0biii/dokuwiki:${{ matrix.release.type }}")
             if [[ "${{ matrix.release.type }}" == "stable" ]]; then
-              TAGS+=("ghcr.io/${{ github.repository }}:latest")
+              TAGS+=("ghcr.io/t0biii/dokuwiki:latest")
             fi
           fi
           
