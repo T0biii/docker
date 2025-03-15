@@ -66,33 +66,39 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       -
         name: Prepare Docker Tags
-        id: prep
+        id: docker_tags
         run: |
-          DOCKERHUB_TAGS=""
-          GHCR_TAGS=""
+          # Initialize tag arrays
+          TAGS=()
           
           # DockerHub Tags
-          if [ "${{ matrix.release.type }}" == "master" ]; then
-            DOCKERHUB_TAGS="t0biii/dokuwiki:master"
+          if [[ "${{ matrix.release.type }}" == "master" ]]; then
+            TAGS+=("t0biii/dokuwiki:master")
           else
-            DOCKERHUB_TAGS="t0biii/dokuwiki:${{ matrix.release.date }} t0biii/dokuwiki:${{ matrix.release.type }}"
-            if [ "${{ matrix.release.type }}" == "stable" ]; then
-              DOCKERHUB_TAGS="$DOCKERHUB_TAGS t0biii/dokuwiki:latest"
+            TAGS+=("t0biii/dokuwiki:${{ matrix.release.date }}")
+            TAGS+=("t0biii/dokuwiki:${{ matrix.release.type }}")
+            if [[ "${{ matrix.release.type }}" == "stable" ]]; then
+              TAGS+=("t0biii/dokuwiki:latest")
             fi
           fi
           
-          # GHCR Tags
-          if [ "${{ matrix.release.type }}" == "master" ]; then
-            GHCR_TAGS="ghcr.io/${{ github.repository }}/dokuwiki:master"
+          # GitHub Packages Tags
+          if [[ "${{ matrix.release.type }}" == "master" ]]; then
+            TAGS+=("ghcr.io/${{ github.repository }}:master")
           else
-            GHCR_TAGS="ghcr.io/${{ github.repository }}/dokuwiki:${{ matrix.release.date }} ghcr.io/${{ github.repository }}/dokuwiki:${{ matrix.release.type }}"
-            if [ "${{ matrix.release.type }}" == "stable" ]; then
-              GHCR_TAGS="$GHCR_TAGS ghcr.io/${{ github.repository }}/dokuwiki:latest"
+            TAGS+=("ghcr.io/${{ github.repository }}:${{ matrix.release.date }}")
+            TAGS+=("ghcr.io/${{ github.repository }}:${{ matrix.release.type }}")
+            if [[ "${{ matrix.release.type }}" == "stable" ]]; then
+              TAGS+=("ghcr.io/${{ github.repository }}:latest")
             fi
           fi
           
-          echo "dockerhub_tags=${DOCKERHUB_TAGS}" >> $GITHUB_OUTPUT
-          echo "ghcr_tags=${GHCR_TAGS}" >> $GITHUB_OUTPUT
+          # Convert array to multiline string for GitHub Actions
+          {
+            echo "tags<<EOF"
+            printf "%s\n" "${TAGS[@]}"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
       -
         name: Build and push
         uses: docker/build-push-action@v5
@@ -101,9 +107,7 @@ jobs:
           push: true
           cache-from: type=gha, scope=${{ github.workflow }}
           cache-to: type=gha, scope=${{ github.workflow }}
-          tags: |
-            ${{ steps.prep.outputs.dockerhub_tags }}
-            ${{ steps.prep.outputs.ghcr_tags }}
+          tags: ${{ steps.docker_tags.outputs.tags }}
           build-args: |
              DOKUWIKI_VERSION=${{ matrix.release.type == 'master' && 'master' || matrix.release.date }}
 
