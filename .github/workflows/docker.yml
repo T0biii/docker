@@ -38,6 +38,9 @@ jobs:
     strategy:
       matrix: ${{fromJson(needs.buildmatrix.outputs.matrix)}}
       fail-fast: false
+    permissions:
+      contents: read
+      packages: write
     steps:
       -
         name: Checkout
@@ -55,6 +58,42 @@ jobs:
           username: splitbrain
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       -
+        name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Prepare Docker Tags
+        id: prep
+        run: |
+          DOCKERHUB_TAGS=""
+          GHCR_TAGS=""
+          
+          # DockerHub Tags
+          if [ "${{ matrix.release.type }}" == "master" ]; then
+            DOCKERHUB_TAGS="dokuwiki/dokuwiki:master"
+          else
+            DOCKERHUB_TAGS="dokuwiki/dokuwiki:${{ matrix.release.date }} dokuwiki/dokuwiki:${{ matrix.release.type }}"
+            if [ "${{ matrix.release.type }}" == "stable" ]; then
+              DOCKERHUB_TAGS="$DOCKERHUB_TAGS dokuwiki/dokuwiki:latest"
+            fi
+          fi
+          
+          # GHCR Tags
+          if [ "${{ matrix.release.type }}" == "master" ]; then
+            GHCR_TAGS="ghcr.io/${{ github.repository }}:master"
+          else
+            GHCR_TAGS="ghcr.io/${{ github.repository }}:${{ matrix.release.date }} ghcr.io/${{ github.repository }}:${{ matrix.release.type }}"
+            if [ "${{ matrix.release.type }}" == "stable" ]; then
+              GHCR_TAGS="$GHCR_TAGS ghcr.io/${{ github.repository }}:latest"
+            fi
+          fi
+          
+          echo "dockerhub_tags=${DOCKERHUB_TAGS}" >> $GITHUB_OUTPUT
+          echo "ghcr_tags=${GHCR_TAGS}" >> $GITHUB_OUTPUT
+      -
         name: Build and push
         uses: docker/build-push-action@v5
         with:
@@ -63,9 +102,8 @@ jobs:
           cache-from: type=gha, scope=${{ github.workflow }}
           cache-to: type=gha, scope=${{ github.workflow }}
           tags: |
-            ${{ matrix.release.type == 'master' && ' ' || format('dokuwiki/dokuwiki:{0}', matrix.release.date) }}
-            dokuwiki/dokuwiki:${{ matrix.release.type }}
-            ${{ matrix.release.type == 'stable' && 'dokuwiki/dokuwiki:latest' || '' }}
+            ${{ steps.prep.outputs.dockerhub_tags }}
+            ${{ steps.prep.outputs.ghcr_tags }}
           build-args: |
              DOKUWIKI_VERSION=${{ matrix.release.type == 'master' && 'master' || matrix.release.date }}
 
